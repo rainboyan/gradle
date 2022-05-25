@@ -1,0 +1,31 @@
+{
+    "name": "My test template",
+    "gradle": {
+        "minVersion": "1.0.0",
+        "maxVersion": "10.0.0"
+    },
+    "questions": [
+        {
+            "type": "bool",
+            "name": "likeGradle",
+            "question": "Do you like Gradle?",
+            "default": true
+        },
+        {
+            "type": "string",
+            "name": "favouriteColor",
+            "question": "What is your favourite color?"
+        },
+        {
+            "type": "choice",
+            "name": "favourite",
+            "question": "What is your favourite fruit?",
+            "choices": {
+                "Banana!": "banana",
+                "Pineapple (without pizzas)": "ananas",
+                "Apple, keeps the doctors away...": "apple",
+                "yes": true
+            }
+        }
+    ]
+}

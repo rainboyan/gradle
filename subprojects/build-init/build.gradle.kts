@@ -32,6 +32,10 @@ dependencies {
     implementation(libs.maven3SettingsBuilder)
     implementation(libs.jgit)
 
+    implementation(libs.jacksonCore)
+    implementation(libs.jacksonAnnotations)
+    implementation(libs.jacksonDatabind)
+
     compileOnly(libs.maven3Compat)
     compileOnly(libs.maven3PluginApi)
     testRuntimeOnly(libs.maven3Compat)

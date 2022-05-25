@@ -23,6 +23,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.specs.Spec;
 import org.gradle.buildinit.InsecureProtocolOption;
+import org.gradle.buildinit.tasks.AskQuestions;
 import org.gradle.buildinit.tasks.InitBuild;
 import org.gradle.internal.file.RelativeFilePathResolver;
 
@@ -39,6 +40,8 @@ public class BuildInitPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        project.getTasks().register("askQuestions", AskQuestions.class);
+
         if (project.getParent() == null) {
             project.getTasks().register("init", InitBuild.class, initBuild -> {
                 initBuild.setGroup("Build Setup");
