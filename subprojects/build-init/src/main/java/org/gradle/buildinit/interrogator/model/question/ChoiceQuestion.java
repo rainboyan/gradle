@@ -45,7 +45,7 @@ public class ChoiceQuestion extends Question {
         Choice selectedChoice = userInputHandler.selectOption(
             getQuestion(),
             choices,
-            null
+            choices.get(0)
         );
 
         return selectedChoice.value;

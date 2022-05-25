@@ -16,12 +16,25 @@
 
 package org.gradle.buildinit.interrogator.model.question;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.gradle.api.internal.tasks.userinput.UserInputHandler;
 
 public class StringQuestion extends Question {
+
+    @JsonProperty("default")
+    private String defaultValue;
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
 
     @Override
     public Object ask(UserInputHandler userInputHandler) {
         return userInputHandler.askQuestion(this.getQuestion(), null);
     }
+
 }

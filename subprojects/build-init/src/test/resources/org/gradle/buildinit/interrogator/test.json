@@ -14,7 +14,8 @@
         {
             "type": "string",
             "name": "favouriteColor",
-            "question": "What is your favourite color?"
+            "question": "What is your favourite color?",
+            "default": "red"
         },
         {
             "type": "choice",

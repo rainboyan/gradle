@@ -26,7 +26,7 @@ class DescriptorSpec extends Specification {
         def testFile = new File(testUrl.toURI())
 
         then:
-        def descriptor = Descriptor.read(testFile)
+        Descriptor.read(testFile)
     }
 
 }
