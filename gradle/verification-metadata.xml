@@ -1183,6 +1183,11 @@
             <pgp value="7c669810892cbd3148fa92995b05ccde140c2876"/>
          </artifact>
       </component>
+      <component group="org.freemarker" name="freemarker" version="2.3.31">
+         <artifact name="freemarker-2.3.31.jar">
+            <pgp value="13ac2213964abe1d1c147c0e1939a2520bab1d90"/>
+         </artifact>
+      </component>
       <component group="org.fusesource.jansi" name="jansi" version="1.18">
          <artifact name="jansi-1.18.jar">
             <pgp value="ea23db1360d9029481e7f2efecdfea3cb4493b94"/>

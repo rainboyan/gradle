@@ -53,6 +53,7 @@ abstract class ExternalModulesExtension {
     val commonsMath = "org.apache.commons:commons-math3"
     val configurationCacheReport = "org.gradle.buildtool.internal:configuration-cache-report:$configurationCacheReportVersion"
     val fastutil = "it.unimi.dsi:fastutil"
+    val freemarker = "org.freemarker:freemarker"
     val gcs = "com.google.apis:google-api-services-storage"
     val googleApiClient = "com.google.api-client:google-api-client"
     val googleHttpClient = "com.google.http-client:google-http-client"

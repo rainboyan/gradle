@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.inject)
     implementation(libs.maven3SettingsBuilder)
     implementation(libs.jgit)
+    implementation(libs.freemarker)
 
     implementation(libs.jacksonCore)
     implementation(libs.jacksonAnnotations)
