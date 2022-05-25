@@ -34,7 +34,7 @@ public class StringQuestion extends Question {
 
     @Override
     public Object ask(UserInputHandler userInputHandler) {
-        return userInputHandler.askQuestion(this.getQuestion(), null);
+        return userInputHandler.askQuestion(this.getQuestion(), getDefaultValue());
     }
 
 }
