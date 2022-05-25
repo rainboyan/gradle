@@ -33,6 +33,8 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 import org.gradle.api.tasks.options.OptionValues;
 import org.gradle.buildinit.InsecureProtocolOption;
+import org.gradle.buildinit.interrogator.Interrogator;
+import org.gradle.buildinit.interrogator.model.Descriptor;
 import org.gradle.buildinit.plugins.internal.BuildConverter;
 import org.gradle.buildinit.plugins.internal.BuildInitializer;
 import org.gradle.buildinit.plugins.internal.InitSettings;
@@ -347,12 +349,13 @@ public class InitBuild extends DefaultTask {
         File targetDir = projectDir.getAsFile();
         cloneRepositoryTo(url, localRepoDir);
         Configuration configuration = loadFreemarkerConfiguration(localRepoDir);
-        Map<String, String> data = loadTemplateData();
+        File optionsFile = new File(localRepoDir, "templateOptions.json");
+        Map<String, Object> data = loadTemplateData(optionsFile);
         processTemplates(targetDir, localRepoDir, configuration, data);
         FileUtils.deleteDirectory(localRepoDir);
     }
 
-    private static void processTemplates(File targetDir, File localRepoDir, Configuration freemarkerConfig, Map<String, String> data) throws IOException, TemplateException {
+    private static void processTemplates(File targetDir, File localRepoDir, Configuration freemarkerConfig, Map<String, Object> data) throws IOException, TemplateException {
         for (File file : FileUtils.listFiles(localRepoDir, null, true)) {
             if (file.isFile()) {
                 URI fileUri = file.toURI();
@@ -369,7 +372,7 @@ public class InitBuild extends DefaultTask {
         }
     }
 
-    private static void processTemplate(File targetDir, Configuration freemarkerConfig, Map<String, String> data, File file, URI baseUri) throws IOException, TemplateException {
+    private static void processTemplate(File targetDir, Configuration freemarkerConfig, Map<String, Object> data, File file, URI baseUri) throws IOException, TemplateException {
         String targetFileName = file.getName().substring(0, file.getName().length() - 9);
         URI templateUri = file.toURI();
         URI generatedFileUri = new File(file.getParentFile(), targetFileName).toURI();
@@ -387,11 +390,10 @@ public class InitBuild extends DefaultTask {
         return relativePath.startsWith(".git") || relativePath.startsWith(".gradle") || Arrays.asList("gradlew", "gradlew.bat").contains(relativePath);
     }
 
-    private Map<String, String> loadTemplateData() {
-        // TODO add result of questionnaire here
-        Map<String, String> data = new HashMap<>();
-        data.put("user", "Big Joe");
-        return data;
+    private Map<String, Object> loadTemplateData(File optionsFile) throws IOException {
+        // TODO no options file
+        Descriptor descriptor = Descriptor.read(optionsFile);
+        return  new Interrogator(getServices().get(UserInputHandler.class)).askQuestions(descriptor.getQuestions());
     }
 
     private static Configuration loadFreemarkerConfiguration(File localRepoDir) throws IOException {
