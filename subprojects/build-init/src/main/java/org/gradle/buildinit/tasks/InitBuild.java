@@ -57,10 +57,13 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -357,24 +360,20 @@ public class InitBuild extends DefaultTask {
         FileUtils.deleteDirectory(localRepoDir);
     }
 
-    private static void processTemplates(File targetDir, File localRepoDir, Configuration freemarkerConfig, Map<String, Object> data) throws IOException, TemplateException {
+    private void processTemplates(File targetDir, File localRepoDir, Configuration freemarkerConfig, Map<String, Object> data) throws IOException, TemplateException {
         for (File file : FileUtils.listFiles(localRepoDir, null, true)) {
             if (file.isFile()) {
                 URI fileUri = file.toURI();
                 URI baseUri = localRepoDir.toURI();
                 String relativePath = baseUri.relativize(fileUri).getPath();
                 if (!isIgnored(relativePath)) {
-                    if (file.getName().endsWith(".template")) {
-                        processTemplate(targetDir, freemarkerConfig, data, file, baseUri, localRepoDir);
-                    } else {
-                        FileUtils.copyFile(file, new File(targetDir, relativePath));
-                    }
+                    processTemplate(targetDir, freemarkerConfig, data, file, baseUri, localRepoDir);
                 }
             }
         }
     }
 
-    private static void processTemplate(File targetDir, Configuration freemarkerConfig, Map<String, Object> data, File file, URI baseUri, File localRepoDir) throws IOException, TemplateException {
+    private void processTemplate(File targetDir, Configuration freemarkerConfig, Map<String, Object> data, File file, URI baseUri, File localRepoDir) throws IOException, TemplateException {
         List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
         boolean hasMetadata = false;
         int endLine = -1;
@@ -391,29 +390,35 @@ public class InitBuild extends DefaultTask {
             throw new RuntimeException("No </#GradleTemplate> tag found for <#GradleTemplate>");
         }
 
-        File paramsTemplateFile = new File(localRepoDir, ".GradleTemplate.params.txt.template"); // TODO check for collisions
-        FileUtils.writeLines(paramsTemplateFile, lines.subList(1, endLine));
-        File paramsFile = new File(localRepoDir, ".GradleTemplate.params.txt");
-        FileUtils.touch(paramsFile);
+        HashMap<String, Object> finalData = new HashMap<>(data);
+        if (hasMetadata) {
+            String paramTemplateName = file.getName() + ".GradleTemplate.params.txt.template"; // TODO use relative path to avoid template caching
+            File paramsTemplateFile = new File(localRepoDir, paramTemplateName); // TODO check for collisions
+            if (paramsTemplateFile.exists()) {
+                paramsTemplateFile.delete();
+                FileUtils.touch(paramsTemplateFile);
+            }
+            FileUtils.writeLines(paramsTemplateFile, lines.subList(1, endLine));
 
-        Template paramsTemplate = freemarkerConfig.getTemplate(".GradleTemplate.params.txt.template");
-        Writer writer = new OutputStreamWriter(new FileOutputStream(paramsFile));
-        paramsTemplate.process(data, writer, null);
-        Properties props = new Properties();
-        props.load(new FileReader(paramsFile));
-        System.out.println("Properties: " + props);
-        for (Object key : props.keySet()) {
-            data.put((String)key, props.get(key));
+            Template paramsTemplate = freemarkerConfig.getTemplate(paramTemplateName);
+            StringWriter writer = new StringWriter();
+            paramsTemplate.process(finalData, writer, null);
+            getLogger().lifecycle(file.getName() + ": " + writer.toString());
+            Properties props = new Properties();
+            props.load(new StringReader(writer.toString()));
+            getLogger().lifecycle("Properties for " + file.getName() + ": " + props);
+            for (Object key : props.keySet()) {
+                finalData.put((String) key, props.get(key));
+            }
+            paramsTemplateFile.delete();
+
+            FileUtils.writeLines(file, lines.subList(endLine + 1, lines.size()));
         }
-        paramsTemplateFile.delete();
-        paramsFile.delete();
-
-        FileUtils.writeLines(file, lines.subList(endLine + 1, lines.size()));
 
         String targetFileName = file.getName().substring(0, file.getName().length() - 9);
         URI templateUri = file.toURI();
         URI generatedFileUri = new File(file.getParentFile(), targetFileName).toURI();
-        String fileName = (String) data.get("fileName");
+        String fileName = (String) finalData.get("targetFile");
         String generatedFileRelativePath =  fileName == null ? baseUri.relativize(generatedFileUri).getPath() : fileName;
         String templateRelativePath = baseUri.relativize(templateUri).getPath();
         Template template = freemarkerConfig.getTemplate(templateRelativePath);
@@ -421,11 +426,11 @@ public class InitBuild extends DefaultTask {
         targetFile.getParentFile().mkdirs();
         FileUtils.touch(targetFile);
         Writer out = new OutputStreamWriter(new FileOutputStream(targetFile));
-        template.process(data, out, null);
+        template.process(finalData, out, null);
     }
 
     private static boolean isIgnored(String relativePath) {
-        return relativePath.startsWith(".git") || relativePath.startsWith(".gradle") || Arrays.asList("gradlew", "gradlew.bat").contains(relativePath);
+        return relativePath.startsWith(".git") || relativePath.startsWith(".gradle") || Arrays.asList("gradlew", "gradlew.bat").contains(relativePath) || relativePath.equals("templateOptions.json");
     }
 
     private Map<String, Object> loadTemplateData(File optionsFile) throws IOException {
