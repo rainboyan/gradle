@@ -15,6 +15,7 @@
  */
 package org.gradle.api.internal.notations;
 
+import org.gradle.api.artifacts.FileCollectionDependency;
 import org.gradle.api.artifacts.SelfResolvingDependency;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
@@ -24,7 +25,7 @@ import org.gradle.internal.typeconversion.NotationConvertResult;
 import org.gradle.internal.typeconversion.NotationConverter;
 import org.gradle.internal.typeconversion.TypeConversionException;
 
-public class DependencyFilesNotationConverter implements NotationConverter<FileCollection, SelfResolvingDependency> {
+public class DependencyFilesNotationConverter implements NotationConverter<FileCollection, FileCollectionDependency> {
     private final Instantiator instantiator;
 
     public DependencyFilesNotationConverter(Instantiator instantiator) {
@@ -37,7 +38,7 @@ public class DependencyFilesNotationConverter implements NotationConverter<FileC
     }
 
     @Override
-    public void convert(FileCollection notation, NotationConvertResult<? super SelfResolvingDependency> result) throws TypeConversionException {
+    public void convert(FileCollection notation, NotationConvertResult<? super FileCollectionDependency> result) throws TypeConversionException {
         result.converted(instantiator.newInstance(DefaultSelfResolvingDependency.class, notation));
     }
 }

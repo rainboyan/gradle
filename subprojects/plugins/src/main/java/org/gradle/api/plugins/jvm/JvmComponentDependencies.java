@@ -18,7 +18,19 @@ package org.gradle.api.plugins.jvm;
 
 import org.gradle.api.Action;
 import org.gradle.api.Incubating;
+import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.ExternalModuleDependency;
+import org.gradle.api.artifacts.FileCollectionDependency;
+import org.gradle.api.artifacts.MinimalExternalModuleDependency;
+import org.gradle.api.artifacts.ProjectDependency;
+import org.gradle.api.artifacts.dsl.DependencyFactory;
+import org.gradle.api.artifacts.dsl.DependencyProvider;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.ProviderConvertible;
+
+import java.util.Map;
 
 /**
  * This DSL element is used to add dependencies to a component, like {@link JvmTestSuite}.
@@ -35,25 +47,27 @@ import org.gradle.api.artifacts.Dependency;
  */
 @Incubating
 public interface JvmComponentDependencies {
-    /**
-     * Add a dependency to the set of implementation dependencies.
-     * <p><br>
-     * <code>implementation</code> dependencies are used at compilation and runtime.
-     *
-     * @param dependencyNotation dependency to add
-     * @see org.gradle.api.artifacts.dsl.DependencyHandler Valid dependency notations.
-     */
-    void implementation(Object dependencyNotation);
-    /**
-     * Add a dependency to the set of implementation dependencies with additional configuration.
-     * <p><br>
-     * <code>implementation</code> dependencies are used at compilation and runtime.
-     *
-     * @param dependencyNotation dependency to add
-     * @param configuration additional configuration for the provided dependency
-     * @see org.gradle.api.artifacts.dsl.DependencyHandler Valid dependency notations.
-     */
-    void implementation(Object dependencyNotation, Action<? super Dependency> configuration);
+
+    // Easily-usable methods for commonly used dependency notations
+    void implementation(String dependencyNotation);
+    void implementation(String dependencyNotation, Action<? super ExternalModuleDependency> configuration);
+    void implementation(Map<String, ?> dependencyNotation);
+    void implementation(Map<String, ?> dependencyNotation, Action<? super ExternalModuleDependency> configuration);
+    void implementation(Project dependencyNotation);
+    void implementation(Project dependencyNotation, Action<? super ProjectDependency> configuration);
+    void implementation(FileCollection dependencyNotation);
+    void implementation(FileCollection dependencyNotation, Action<? super FileCollectionDependency> configuration);
+    // Note that these are specifically typed to MinimalExternalModuleDependency, because they're only for version catalog
+    // If a user wants to Provider a different type of dependency, the more verbose mechanism below should be used.
+    void implementation(Provider<? extends MinimalExternalModuleDependency> dependencyNotation);
+    void implementation(Provider<? extends MinimalExternalModuleDependency> dependencyNotation, Action<? super ExternalModuleDependency> configuration);
+    void implementation(ProviderConvertible<? extends MinimalExternalModuleDependency> dependencyNotation);
+    void implementation(ProviderConvertible<? extends MinimalExternalModuleDependency> dependencyNotation, Action<? super ExternalModuleDependency> configuration);
+    // Generic dependency notation methods
+    void implementation(Dependency dependencyNotation);
+    <D extends Dependency> void implementation(D dependencyNotation, Action<? super D> configuration);
+    void implementation(DependencyProvider<?> dependencyNotation);
+    <D extends Dependency> void implementation(DependencyProvider<? extends D> dependencyNotation, Action<? super D> configuration);
 
     /**
      * Add a dependency to the set of compileOnly dependencies.
