@@ -54,15 +54,17 @@ import javax.annotation.Nullable;
 import javax.lang.model.SourceVersion;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.gradle.buildinit.plugins.internal.PackageNameBuilder.toPackageName;
@@ -363,7 +365,7 @@ public class InitBuild extends DefaultTask {
                 String relativePath = baseUri.relativize(fileUri).getPath();
                 if (!isIgnored(relativePath)) {
                     if (file.getName().endsWith(".template")) {
-                        processTemplate(targetDir, freemarkerConfig, data, file, baseUri);
+                        processTemplate(targetDir, freemarkerConfig, data, file, baseUri, localRepoDir);
                     } else {
                         FileUtils.copyFile(file, new File(targetDir, relativePath));
                     }
@@ -372,11 +374,47 @@ public class InitBuild extends DefaultTask {
         }
     }
 
-    private static void processTemplate(File targetDir, Configuration freemarkerConfig, Map<String, Object> data, File file, URI baseUri) throws IOException, TemplateException {
+    private static void processTemplate(File targetDir, Configuration freemarkerConfig, Map<String, Object> data, File file, URI baseUri, File localRepoDir) throws IOException, TemplateException {
+        List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
+        boolean hasMetadata = false;
+        int endLine = -1;
+        if (lines.size() > 0 && lines.get(0).startsWith("<#GradleTemplate>")) {
+            hasMetadata = true;
+            for (int i = 1; i < lines.size(); i++) {
+                if (lines.get(i).equals("</#GradleTemplate>"))  {
+                    endLine = i;
+                    break;
+                }
+            }
+        }
+        if (hasMetadata && endLine == -1) {
+            throw new RuntimeException("No </#GradleTemplate> tag found for <#GradleTemplate>");
+        }
+
+        File paramsTemplateFile = new File(localRepoDir, ".GradleTemplate.params.txt.template"); // TODO check for collisions
+        FileUtils.writeLines(paramsTemplateFile, lines.subList(1, endLine));
+        File paramsFile = new File(localRepoDir, ".GradleTemplate.params.txt");
+        FileUtils.touch(paramsFile);
+
+        Template paramsTemplate = freemarkerConfig.getTemplate(".GradleTemplate.params.txt.template");
+        Writer writer = new OutputStreamWriter(new FileOutputStream(paramsFile));
+        paramsTemplate.process(data, writer, null);
+        Properties props = new Properties();
+        props.load(new FileReader(paramsFile));
+        System.out.println("Properties: " + props);
+        for (Object key : props.keySet()) {
+            data.put((String)key, props.get(key));
+        }
+        paramsTemplateFile.delete();
+        paramsFile.delete();
+
+        FileUtils.writeLines(file, lines.subList(endLine + 1, lines.size()));
+
         String targetFileName = file.getName().substring(0, file.getName().length() - 9);
         URI templateUri = file.toURI();
         URI generatedFileUri = new File(file.getParentFile(), targetFileName).toURI();
-        String generatedFileRelativePath = baseUri.relativize(generatedFileUri).getPath();
+        String fileName = (String) data.get("fileName");
+        String generatedFileRelativePath =  fileName == null ? baseUri.relativize(generatedFileUri).getPath() : fileName;
         String templateRelativePath = baseUri.relativize(templateUri).getPath();
         Template template = freemarkerConfig.getTemplate(templateRelativePath);
         File targetFile = new File(targetDir, generatedFileRelativePath);
